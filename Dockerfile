@@ -46,11 +46,11 @@ FROM nginx:alpine AS server
 COPY --from=builder /output/dist /usr/share/nginx/html
 COPY --from=builder /output/hash.txt /var/build-metadata/hash.txt
 
-# Ensure Nginx serves the correct index.html
+# Create a template for nginx configuration that supports dynamic PORT
 RUN rm /etc/nginx/conf.d/default.conf
-COPY <<EOF /etc/nginx/conf.d/default.conf
+COPY <<EOF /etc/nginx/templates/default.conf.template
 server {
-    listen 80;
+    listen \$PORT;
     server_name localhost;
     root /usr/share/nginx/html;
     index index.html;
@@ -60,8 +60,8 @@ server {
 }
 EOF
 
-# Expose port 80 for serving the static site
+# Expose port 80 for serving the static site (Railway will override with PORT env var)
 EXPOSE 80
 
-# Default command to run nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Use envsubst to replace PORT variable and start nginx
+CMD /bin/sh -c "PORT=${PORT:-80} envsubst '\$PORT' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
