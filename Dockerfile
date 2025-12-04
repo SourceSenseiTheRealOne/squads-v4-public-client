@@ -8,20 +8,19 @@ WORKDIR /app
 RUN corepack enable && corepack prepare yarn@1.22.22 --activate
 
 # Ensure consistent timestamps for deterministic builds
-ENV NODE_ENV=production
 ENV SOURCE_DATE_EPOCH=315532800
 
 # Copy dependencies first (for better caching)
 COPY package.json yarn.lock ./
 
-# Install dependencies in a reproducible way
+# Install all dependencies (including devDependencies for build tools)
 RUN yarn install --frozen-lockfile --non-interactive --check-files --ignore-scripts
 
 # Copy the full source code after dependencies are cached
 COPY . .
 
-# Build the application using Webpack
-RUN yarn build
+# Build the application using Webpack (set NODE_ENV for the build only)
+RUN NODE_ENV=production yarn build
 
 # Ensure consistent timestamps for all files in dist/
 RUN find dist -exec touch -d @${SOURCE_DATE_EPOCH} {} + && \
