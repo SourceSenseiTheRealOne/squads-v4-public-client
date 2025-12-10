@@ -73,8 +73,17 @@ const RejectButton = ({
 
     transaction.add(rejectProposalInstruction);
 
-    const signature = await wallet.sendTransaction(transaction, connection, {
+    // Set blockhash and fee payer
+    const { blockhash } = await connection.getLatestBlockhash();
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = wallet.publicKey;
+
+    // Use signTransaction + sendRawTransaction instead of sendTransaction
+    // This works around a Phantom wallet bug with sendTransaction
+    const signedTransaction = await wallet.signTransaction!(transaction);
+    const signature = await connection.sendRawTransaction(signedTransaction.serialize(), {
       skipPreflight: true,
+      preflightCommitment: 'confirmed',
     });
     console.log('Transaction signature', signature);
     toast.loading('Confirming...', {

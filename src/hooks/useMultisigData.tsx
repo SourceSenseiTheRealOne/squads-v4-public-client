@@ -12,8 +12,15 @@ export const useMultisigData = () => {
   const { multisigAddress } = useMultisigAddress();
   const { vaultIndex } = useVaultIndex();
 
-  // Ensure we have a valid RPC URL (fallback to mainnet-beta)
-  const effectiveRpcUrl = rpcUrl || clusterApiUrl('mainnet-beta');
+  // Ensure we have a valid RPC URL (fallback to devnet for safety)
+  const effectiveRpcUrl = rpcUrl || clusterApiUrl('devnet');
+  
+  // Debug logging
+  if (typeof window !== 'undefined') {
+    console.log('[useMultisigData] rpcUrl from settings:', rpcUrl);
+    console.log('[useMultisigData] effectiveRpcUrl:', effectiveRpcUrl);
+  }
+  
   const connection = useMemo(() => new Connection(effectiveRpcUrl), [effectiveRpcUrl]);
 
   // Compute programId safely
